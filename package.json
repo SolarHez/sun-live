@@ -67,7 +67,11 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "eas:build android:debug": "eas build --platform android --profile development",
-    "eas:build android:release": "eas build --platform android --profile preview"
+    "eas:build android:release": "eas build --platform android --profile preview",
+    "version": "node scripts/sync-version.mjs",
+    "release:patch": "pnpm version patch && git push --follow-tags",
+    "release:minor": "pnpm version minor && git push --follow-tags",
+    "release:major": "pnpm version major && git push --follow-tags"
   },
   "private": true,
   "packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916"
