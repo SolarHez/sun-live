@@ -1,6 +1,9 @@
 name: Build iOS IPA-Debug
 
 on:
+  push:
+    branches:
+      - master # 只要往 master 提交就自动触发
   workflow_dispatch: # 手动触发构建
 
 jobs:
