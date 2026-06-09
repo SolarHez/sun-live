@@ -3,7 +3,7 @@ name: Build iOS IPA-Debug
 on:
   push:
     tags:
-      - "v*" # 只要推送以 v 开头的 tag（如 v1.0, v2.0.0-beta）就会自动触发构建
+      - "v*"
   workflow_dispatch: # 手动触发构建依然保留，方便日常调试
 
 jobs:
