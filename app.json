@@ -11,12 +11,12 @@
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.solarhez.sunlive",
       "infoPlist": {
-        // 关键权限：允许 App 播放来自非 HTTPS（即不安全的 HTTP）的直播流
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        // 保持后台播放声音（可选，看你的业务需求）
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -26,7 +26,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.solarhez.sunlive",
-      "permissions": ["INTERNET"]
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "web": {
       "output": "static",
@@ -48,7 +50,9 @@
       [
         "react-native-vlc-media-player",
         {
-          "ios": { "includeVLCKit": false }
+          "ios": {
+            "includeVLCKit": false
+          }
         }
       ]
     ],
@@ -57,7 +61,10 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {}
+      "router": {},
+      "eas": {
+        "projectId": "a3ed56ce-4ee1-415f-9453-421b6c89c45e"
+      }
     }
   }
 }
