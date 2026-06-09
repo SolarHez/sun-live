@@ -26,7 +26,7 @@ export async function TarsHttpClient<T>(
   tup.writeStruct("tReq", req);
   const requestBuffer = tup.encode().toNodeBuffer();
   const { data } = await axios.post<ArrayBuffer>(
-    "http://wup.huya.com",
+    "https://wup.huya.com",
     requestBuffer,
     {
       headers: {

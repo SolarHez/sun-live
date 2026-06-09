@@ -8,7 +8,16 @@
     "scheme": "sunlive",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon.png"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.solarhez.sunlive",
+      "infoPlist": {
+        // 关键权限：允许 App 播放来自非 HTTPS（即不安全的 HTTP）的直播流
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        // 保持后台播放声音（可选，看你的业务需求）
+        "UIBackgroundModes": ["audio"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,7 +25,8 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.solarhez.sunlive"
+      "package": "com.solarhez.sunlive",
+      "permissions": ["INTERNET"]
     },
     "web": {
       "output": "static",
@@ -28,11 +38,17 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
+          "backgroundColor": "#ffffff",
           "android": {
             "image": "./assets/images/react-logo.png",
             "imageWidth": 76
           }
+        }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": { "includeVLCKit": false }
         }
       ]
     ],
@@ -41,10 +57,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "65273b39-5f05-48c2-87b5-d9226dc9faf4"
-      }
+      "router": {}
     }
   }
 }

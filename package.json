@@ -4,9 +4,6 @@
   "version": "1.0.4",
   "dependencies": {
     "@expo/ui": "~56.0.16",
-    "@rn-primitives/alert-dialog": "^1.4.0",
-    "@rn-primitives/portal": "^1.4.0",
-    "@rn-primitives/slot": "^1.4.0",
     "@tars/stream": "^2.0.3",
     "@types/node": "^25.9.2",
     "axios": "^1.17.0",
@@ -40,7 +37,7 @@
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
-    "react-native-video": "^6.19.2",
+    "react-native-vlc-media-player": "^1.0.98",
     "react-native-web": "~0.21.0",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "0.8.3",

@@ -1,7 +1,6 @@
 import { Stack, ThemeProvider, DarkTheme, DefaultTheme } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useColorScheme, View } from "react-native";
-import { PortalHost } from "@rn-primitives/portal";
 import "../global.css";
 
 import { Buffer } from "buffer";
@@ -22,7 +21,6 @@ export default function RootLayout() {
           <Stack.Screen name="(test)" options={{ headerShown: false }} />
         </Stack>
         <StatusBar style="auto" />
-        <PortalHost />
       </ThemeProvider>
     </View>
   );
