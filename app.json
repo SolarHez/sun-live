@@ -15,7 +15,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.jiangxhe.sunlive"
     },
     "web": {
       "output": "static",
@@ -29,7 +30,7 @@
         {
           "backgroundColor": "#208AEF",
           "android": {
-            "image": "./assets/images/splash.png",
+            "image": "./assets/images/react-logo.png",
             "imageWidth": 76
           }
         }
@@ -38,6 +39,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "65273b39-5f05-48c2-87b5-d9226dc9faf4"
+      }
     }
   }
 }
