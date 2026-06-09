@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "sun-live",
-    "slug": "sun-live",
+    "name": "SunLive",
+    "slug": "sunlive-app",
     "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -16,7 +16,7 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.jiangxhe.sunlive"
+      "package": "com.solarhez.sunlive"
     },
     "web": {
       "output": "static",
