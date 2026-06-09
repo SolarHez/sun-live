@@ -35,23 +35,27 @@ jobs:
           cd ios
           pod install
 
+      - name: Get Expo Info
+        id: expo_info
+        run: |
+          EXPO_APP_NAME=$(jq -r '.expo.name // .name' app.json)
+          VERSION=$(jq -r .version package.json)
+          echo "EXPO_APP_NAME=$EXPO_APP_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Build iOS-Debug from Xcode
         run: |
-          RAW_NAME=$(jq -r '.expo.name // .name' app.json)
-          if [ "$RAW_NAME" = "null" ] || [ -z "$RAW_NAME" ]; then
-            RAW_NAME=$(jq -r .name package.json)
-          fi
-          SAFE_NAME=$(echo "$RAW_NAME" | sed 's/./\u&/' | tr -cd '[:alnum:]_')
+          EXPO_APP_NAME=${{ steps.expo_info.outputs.EXPO_APP_NAME }}
 
           echo "🚀 开始进行 Xcode 硬件加速编译..."
+          echo "📦 Expo包名: $EXPO_APP_NAME "
 
-          # 🌟 核心优化：使用 xcbeautify（如果可用）精简输出，同时注入多核并行编译参数
           xcodebuild \
-            -workspace ios/$SAFE_NAME.xcworkspace \
-            -scheme $SAFE_NAME \
-            -configuration Release \
+            -workspace ios/${EXPO_APP_NAME}.xcworkspace \
+            -scheme ${EXPO_APP_NAME} \
+            -configuration Debug \
             -sdk iphoneos \
-            -archivePath build/$SAFE_NAME.xcarchive \
+            -archivePath build/${EXPO_APP_NAME}.xcarchive \
             -jobs $(sysctl -n hw.ncpu) \
             COMPILER_INDEX_STORE_ENABLE=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -61,32 +65,35 @@ jobs:
 
       - name: Build .app for .ipa
         run: |
-          RAW_NAME=$(jq -r '.expo.name // .name' app.json)
-          VERSION=$(jq -r .version package.json)
-          SAFE_NAME=$(echo $RAW_NAME | tr -cd '[:alnum:]_')
+          EXPO_APP_NAME=${{ steps.expo_info.outputs.EXPO_APP_NAME }}
+          VERSION=${{ steps.expo_info.outputs.VERSION }}
+
+          echo "🚀 开始进行 .app 打包..."
+          echo "📦 Expo包名: $EXPO_APP_NAME "
+          echo "🦄 Expo版本: $VERSION "
 
           echo "当前目录: $(pwd)"
           # 1. 稳妥切进 Applications 目录
-          cd "$GITHUB_WORKSPACE/build/${SAFE_NAME}.xcarchive/Products/Applications"
+          cd "$GITHUB_WORKSPACE/build/${EXPO_APP_NAME}.xcarchive/Products/Applications"
 
           echo "当前打包目录: $(pwd)"
           echo "开始创建 Payload 目录..."
           # 2. 创建标准的 Payload 目录
           mkdir -p Payload
-          cp -r "${SAFE_NAME}.app" Payload/
+          cp -r "${EXPO_APP_NAME}.app" Payload/
 
           echo "开始压缩 Payload..."
           # 3. 加上 -q 静默压缩，-r 递归压缩
-          zip -qr "${SAFE_NAME}_debug_${VERSION}.ipa" Payload
+          zip -qr "${EXPO_APP_NAME}_debug_${VERSION}.ipa" Payload
 
           echo "开始移动 IPA..."
           # 4. 把成品移到 GitHub 工作区根目录
-          mv "${SAFE_NAME}_debug_${VERSION}.ipa" "$GITHUB_WORKSPACE/"
+          mv "${EXPO_APP_NAME}_debug_${VERSION}.ipa" "$GITHUB_WORKSPACE/"
 
           echo "IPA 已移动到 $GITHUB_WORKSPACE/"
 
       - name: Upload .ipa
         uses: actions/upload-artifact@v4
         with:
-          name: ios_no_sign_debug
+          name: ios_debug_no_sign
           path: ./*.ipa
