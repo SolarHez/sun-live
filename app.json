@@ -2,7 +2,7 @@
   "expo": {
     "name": "SunLive",
     "slug": "sunlive-app",
-    "version": "1.0.16",
+    "version": "1.0.17",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "sunlive",
@@ -14,7 +14,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
