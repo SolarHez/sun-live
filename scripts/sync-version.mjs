@@ -17,10 +17,6 @@ if (fs.existsSync(pkgPath)) {
   versionParts[2] += 1;
   pkg.version = versionParts.join(".");
 
-  // 写回 package.json（纯文件写入，不触发任何 npm/git 校验）
-  fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n");
-  console.log(`\n⚙️ [Auto Bump] package.json 已自动升级至: ${pkg.version}`);
-
   // 🌟 2. 同步修改 app.json (Expo 配置)
   const appJsonPath = path.resolve(__dirname, "../app.json");
   if (fs.existsSync(appJsonPath)) {

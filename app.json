@@ -2,7 +2,7 @@
   "expo": {
     "name": "SunLive",
     "slug": "sunlive-app",
-    "version": "1.0.4",
+    "version": "1.0.6",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "sunlive",
@@ -14,7 +14,9 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -24,7 +26,9 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.solarhez.sunlive",
-      "permissions": ["INTERNET"]
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "web": {
       "output": "static",
