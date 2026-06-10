@@ -17,26 +17,12 @@ if (fs.existsSync(pkgPath)) {
   versionParts[2] += 1;
   pkg.version = versionParts.join(".");
 
-  // 🌟 2. 同步修改 app.json (Expo 配置)
+  // 同步修改 app.json (Expo 配置)
   const appJsonPath = path.resolve(__dirname, "../app.json");
   if (fs.existsSync(appJsonPath)) {
     const appJson = JSON.parse(fs.readFileSync(appJsonPath, "utf-8"));
     if (appJson.expo) {
       appJson.expo.version = pkg.version;
-
-      // 顺手让 Android 的 versionCode 和 iOS 的 buildNumber 自增
-      if (
-        appJson.expo.android &&
-        typeof appJson.expo.android.versionCode === "number"
-      ) {
-        appJson.expo.android.versionCode += 1;
-      }
-      if (appJson.expo.ios && appJson.expo.ios.buildNumber) {
-        appJson.expo.ios.buildNumber = (
-          parseInt(appJson.expo.ios.buildNumber, 10) + 1
-        ).toString();
-      }
-
       fs.writeFileSync(appJsonPath, JSON.stringify(appJson, null, 2) + "\n");
       console.log(`⚙️ [Auto Bump] Expo app.json 已完美同步！`);
     }
