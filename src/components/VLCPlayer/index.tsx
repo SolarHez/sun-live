@@ -1,13 +1,6 @@
-import {
-  Modal,
-  Pressable,
-  TouchableOpacity,
-  View,
-  Text,
-  Button,
-} from "react-native";
+import { Dimensions, Modal, Pressable, View } from "react-native";
 import { VLCPlayer } from "react-native-vlc-media-player";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cssInterop } from "nativewind";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Ionicons, Feather } from "@expo/vector-icons";
@@ -15,6 +8,11 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
 
 cssInterop(Pressable, { className: "style" });
 cssInterop(Modal, { className: "style" });
@@ -94,66 +92,54 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
     setShowControls(false);
     controlsTimeoutRef.current = setTimeout(() => {
       setShowControls(true);
-    }, 3000);
+    }, 2000);
   };
+
+  const singleTap = Gesture.Tap()
+    .onEnd(() => {
+      console.log("singleTap");
+      handleControlsPress();
+    })
+    .runOnJS(true);
+
+  const doubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .onEnd(() => {
+      console.log("doubleTap");
+      toggleFullscreen();
+    })
+    .runOnJS(true);
+
+  const screenWidth = Dimensions.get("window").width;
+  const drag = Gesture.Pan()
+    .onStart((e) => {
+      console.log("开始拖拽");
+    })
+    .onUpdate((e) => {
+      if (e.x < screenWidth / 2) {
+        console.log("亮度区域", 0 - e.translationY * 0.01);
+      } else {
+        console.log("音量区域", 0 - e.translationY * 0.01);
+      }
+    })
+    .onEnd(() => {
+      console.log("结束拖拽");
+    });
+
+  const gesture = Gesture.Exclusive(doubleTap, singleTap, drag);
 
   return (
     <Modal visible={true} supportedOrientations={["portrait", "landscape"]}>
-      <View
-        className="flex-1"
-        style={{ paddingTop: isFullscreen ? 0 : insets.top }}
-      >
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <View
-          className={
-            isFullscreen ? "w-full h-full bg-black" : "w-full h-1/3 bg-black"
-          }
+          className="flex-1"
+          style={{ paddingTop: isFullscreen ? 0 : insets.top }}
         >
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={handleControlsPress}
-            className="w-full h-full flex-1  relative"
+          <View
+            className={
+              isFullscreen ? "w-full h-full bg-black" : "w-full h-1/3 bg-black"
+            }
           >
-            {/* 控制层 */}
-            <View
-              className={`absolute z-50 inset-0 w-full h-full ${showControls ? "opacity-0" : "opacity-100"}`}
-            >
-              <View className="h-full relative">
-                <View
-                  className={`h-12 absolute top-0 w-full  flex justify-center`}
-                >
-                  <View className="flex flex-row items-center justify-between">
-                    <Pressable onPress={handleBackPress} className="p-2 h-full">
-                      <Ionicons name="chevron-back" size={24} color="white" />
-                    </Pressable>
-                  </View>
-                </View>
-                <View className=" h-12 absolute bottom-0 w-full px-2 flex justify-center">
-                  <View className="flex flex-row items-center justify-between">
-                    <Pressable
-                      onPress={() => setPaused(!paused)}
-                      className="p-2 h-full"
-                    >
-                      {isPlaying ? (
-                        <Ionicons name="pause" size={24} color="white" />
-                      ) : (
-                        <Ionicons name="play" size={24} color="white" />
-                      )}
-                    </Pressable>
-                    <Pressable
-                      onPress={async () => await toggleFullscreen()}
-                      className="p-2 h-full"
-                    >
-                      {isFullscreen ? (
-                        <Feather name="minimize" size={24} color="white" />
-                      ) : (
-                        <Feather name="maximize" size={24} color="white" />
-                      )}
-                    </Pressable>
-                  </View>
-                </View>
-              </View>
-            </View>
-
             <VLCPlayer
               style={{ flex: 1 }}
               videoAspectRatio="16:9"
@@ -161,11 +147,63 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
               onPlaying={() => setIsPlaying(true)}
               onPaused={() => setIsPlaying(false)}
               paused={paused}
+              volume={0}
             />
-          </TouchableOpacity>
+            <GestureDetector gesture={gesture}>
+              <View className="w-full h-full absolute z-50 inset-0">
+                {/* 控制层 */}
+                <View
+                  className={`absolute z-50 inset-0 w-full h-full ${showControls ? "opacity-0" : "opacity-100"}`}
+                >
+                  <View className="h-full relative">
+                    <View
+                      className={`h-12 absolute top-0 w-full  flex justify-center`}
+                    >
+                      <View className="flex flex-row items-center justify-between">
+                        <Pressable
+                          onPress={handleBackPress}
+                          className="p-2 h-full"
+                        >
+                          <Ionicons
+                            name="chevron-back"
+                            size={24}
+                            color="white"
+                          />
+                        </Pressable>
+                      </View>
+                    </View>
+                    <View className=" h-12 absolute bottom-0 w-full px-2 flex justify-center">
+                      <View className="flex flex-row items-center justify-between">
+                        <Pressable
+                          onPress={() => setPaused(!paused)}
+                          className="p-2 h-full"
+                        >
+                          {isPlaying ? (
+                            <Ionicons name="pause" size={24} color="white" />
+                          ) : (
+                            <Ionicons name="play" size={24} color="white" />
+                          )}
+                        </Pressable>
+                        <Pressable
+                          onPress={async () => await toggleFullscreen()}
+                          className="p-2 h-full"
+                        >
+                          {isFullscreen ? (
+                            <Feather name="minimize" size={24} color="white" />
+                          ) : (
+                            <Feather name="maximize" size={24} color="white" />
+                          )}
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </GestureDetector>
+          </View>
+          {!isFullscreen && <View>{children}</View>}
         </View>
-        {!isFullscreen && <View>{children}</View>}
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 };
