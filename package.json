@@ -4,6 +4,7 @@
   "version": "1.0.4",
   "dependencies": {
     "@expo/ui": "~56.0.16",
+    "@tabler/icons-react": "^3.44.0",
     "@tars/stream": "^2.0.3",
     "@types/node": "^25.9.2",
     "axios": "^1.17.0",
@@ -12,6 +13,7 @@
     "clsx": "^2.1.1",
     "crypto-js": "^4.2.0",
     "expo": "~56.0.9",
+    "expo-build-properties": "~56.0.17",
     "expo-constants": "~56.0.17",
     "expo-crypto": "~56.0.4",
     "expo-dev-client": "~56.0.19",
@@ -26,6 +28,7 @@
     "expo-symbols": "~56.0.6",
     "expo-system-ui": "~56.0.5",
     "expo-web-browser": "~56.0.5",
+    "lucide-react-native": "^1.17.0",
     "nativewind": "^4.2.5",
     "node-libs-react-native": "^1.2.1",
     "process": "^0.11.10",

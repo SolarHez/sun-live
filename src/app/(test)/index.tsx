@@ -1,5 +1,10 @@
+import AppIcon from "@/components/LucideIcons";
 import { View } from "react-native";
 
 export default function Test() {
-  return <View></View>;
+  return (
+    <View>
+      <AppIcon name="lucide:Airplay" />
+    </View>
+  );
 }
