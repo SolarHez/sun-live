@@ -1,7 +1,7 @@
 {
   "name": "sun-live",
   "main": "expo-router/entry",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "dependencies": {
     "@expo/ui": "~56.0.16",
     "@tabler/icons-react": "^3.44.0",
