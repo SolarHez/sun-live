@@ -12,11 +12,6 @@ const pkgPath = path.resolve(__dirname, "../package.json");
 if (fs.existsSync(pkgPath)) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
 
-  // 将版本号最后一位加 1 (例如 1.4.1 -> 1.4.2)
-  const versionParts = pkg.version.split(".").map(Number);
-  versionParts[2] += 1;
-  pkg.version = versionParts.join(".");
-
   // 同步修改 app.json (Expo 配置)
   const appJsonPath = path.resolve(__dirname, "../app.json");
   if (fs.existsSync(appJsonPath)) {
