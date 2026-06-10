@@ -1,18 +1,16 @@
-import { Dimensions, Modal, Pressable, View } from "react-native";
+import { Dimensions, Modal, Pressable, StatusBar, View } from "react-native";
 import { VLCPlayer } from "react-native-vlc-media-player";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cssInterop } from "nativewind";
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Gesture,
   GestureDetector,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
+import SystemSetting from "react-native-system-setting";
 
 cssInterop(Pressable, { className: "style" });
 cssInterop(Modal, { className: "style" });
@@ -29,6 +27,28 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
   const [showControls, setShowControls] = useState(true);
   const httpsUrl = url.replace("http://", "https://") || "";
   const insets = useSafeAreaInsets();
+
+  const originalBrightnessRef = useRef<number>(0.25);
+
+  // 进入时保存原始亮度
+  useEffect(() => {
+    SystemSetting.getAppBrightness().then((bri) => {
+      originalBrightnessRef.current = bri;
+    });
+
+    // 退出时恢复原始亮度
+    return () => {
+      if (originalBrightnessRef.current >= 0) {
+        SystemSetting.setAppBrightness(originalBrightnessRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      SystemSetting.setAppBrightness(originalBrightnessRef.current);
+    }
+  }, [isFullscreen]);
 
   // 组件挂载时重置方向状态
   useEffect(() => {
@@ -68,6 +88,9 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
         await ScreenOrientation.lockAsync(
           ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
         );
+        await ScreenOrientation.lockAsync(
+          ScreenOrientation.OrientationLock.LANDSCAPE,
+        );
       }
       setIsFullscreen(!isFullscreen);
     } catch (error) {
@@ -87,7 +110,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
 
   const controlsTimeoutRef = useRef<any>(null);
   const handleControlsPress = () => {
-    console.log("handleControlsPress");
     clearTimeout(controlsTimeoutRef.current);
     setShowControls(false);
     controlsTimeoutRef.current = setTimeout(() => {
@@ -97,7 +119,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
 
   const singleTap = Gesture.Tap()
     .onEnd(() => {
-      console.log("singleTap");
       handleControlsPress();
     })
     .runOnJS(true);
@@ -105,31 +126,42 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
   const doubleTap = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
-      console.log("doubleTap");
       toggleFullscreen();
     })
     .runOnJS(true);
 
   const screenWidth = Dimensions.get("window").width;
+  const VolumeRef = useRef<number>(0.5);
+  const BrightnessRef = useRef<number>(0.25);
   const drag = Gesture.Pan()
-    .onStart((e) => {
-      console.log("开始拖拽");
+    .onStart(() => {
+      handleControlsPress();
+      SystemSetting.getVolume().then((vol) => {
+        VolumeRef.current = vol;
+      });
+      SystemSetting.getAppBrightness().then((bri) => {
+        BrightnessRef.current = bri;
+      });
     })
     .onUpdate((e) => {
+      if (!isFullscreen) return;
       if (e.x < screenWidth / 2) {
-        console.log("亮度区域", 0 - e.translationY * 0.01);
+        const brightness = 0 - e.translationY * 0.005;
+        SystemSetting.setAppBrightness(BrightnessRef.current + brightness);
+        console.log("亮度区域", brightness + BrightnessRef.current);
       } else {
-        console.log("音量区域", 0 - e.translationY * 0.01);
+        const volume = 0 - e.translationY * 0.01;
+        SystemSetting.setVolume(VolumeRef.current + volume);
+        console.log("音量区域", volume + VolumeRef.current);
       }
     })
-    .onEnd(() => {
-      console.log("结束拖拽");
-    });
+    .runOnJS(true);
 
   const gesture = Gesture.Exclusive(doubleTap, singleTap, drag);
 
   return (
     <Modal visible={true} supportedOrientations={["portrait", "landscape"]}>
+      <StatusBar hidden={isFullscreen} animated />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View
           className="flex-1"
@@ -147,7 +179,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
               onPlaying={() => setIsPlaying(true)}
               onPaused={() => setIsPlaying(false)}
               paused={paused}
-              volume={0}
             />
             <GestureDetector gesture={gesture}>
               <View className="w-full h-full absolute z-50 inset-0">
