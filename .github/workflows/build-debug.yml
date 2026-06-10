@@ -1,0 +1,151 @@
+name: Build Debug For iOS & Android
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: # 手动触发构建依然保留，方便日常调试
+
+permissions:
+  contents: write
+
+jobs:
+  # ==================== JOB 1: 安卓打包 ====================
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: "17"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prebuild Android Project
+        run: npx expo prebuild --platform android --profile development --clean
+
+      - name: Build Android Debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Prepare APK Artifact
+        run: |
+          echo "当前目录结构查看："
+          ls -l android/app/build/outputs/apk/debug/
+
+          echo "🚀 开始准备 APK Artifact..."
+          EXPO_APP_NAME=$(jq -r '.expo.name // .name' app.json)
+          VERSION=$(jq -r .version package.json)
+          cp android/app/build/outputs/apk/debug/*.apk ./${EXPO_APP_NAME}-v${VERSION}-debug.apk
+
+      - name: Upload APK to Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android_debug_apk
+          path: ./*.apk
+
+  # ==================== JOB 2: iOS 打包 ====================
+  ios-build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Add expo-dev-client
+        run: npx expo install expo-dev-client
+
+      - name: Prebuild and Install CocoaPods
+        run: |
+          npx expo prebuild --platform ios --profile development --clean
+          cd ios
+          pod install
+
+      - name: Get Expo Info
+        id: expo_info
+        run: |
+          EXPO_APP_NAME=$(jq -r '.expo.name // .name' app.json)
+          VERSION=$(jq -r .version package.json)
+          echo "EXPO_APP_NAME=$EXPO_APP_NAME" >> $GITHUB_OUTPUT
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build iOS-Debug from Xcode
+        run: |
+          EXPO_APP_NAME=${{ steps.expo_info.outputs.EXPO_APP_NAME }}
+
+          echo "🚀 开始进行 Xcode 硬件加速编译..."
+          echo "📦 Expo包名: $EXPO_APP_NAME "
+
+          xcodebuild \
+            -workspace ios/${EXPO_APP_NAME}.xcworkspace \
+            -scheme ${EXPO_APP_NAME} \
+            -configuration Debug \
+            -sdk iphoneos \
+            -archivePath build/${EXPO_APP_NAME}.xcarchive \
+            -jobs $(sysctl -n hw.ncpu) \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            clean archive | egrep -v '^(Analysing|Minting|Copy|Process|Generate)'
+
+      - name: Build .app for .ipa
+        run: |
+          EXPO_APP_NAME=${{ steps.expo_info.outputs.EXPO_APP_NAME }}
+          VERSION=${{ steps.expo_info.outputs.VERSION }}
+
+          echo "🚀 开始进行 .app 打包..."
+          echo "📦 Expo包名: $EXPO_APP_NAME "
+          echo "🦄 Expo版本: $VERSION "
+
+          echo "当前目录: $(pwd)"
+          # 1. 稳妥切进 Applications 目录
+          cd "$GITHUB_WORKSPACE/build/${EXPO_APP_NAME}.xcarchive/Products/Applications"
+
+          echo "当前打包目录: $(pwd)"
+          echo "开始创建 Payload 目录..."
+          # 2. 创建标准的 Payload 目录
+          mkdir -p Payload
+          cp -r "${EXPO_APP_NAME}.app" Payload/
+
+          echo "开始压缩 Payload..."
+          # 3. 加上 -q 静默压缩，-r 递归压缩
+          zip -qr "${EXPO_APP_NAME}_debug_${VERSION}.ipa" Payload
+
+          echo "开始移动 IPA..."
+          # 4. 把成品移到 GitHub 工作区根目录
+          mv "${EXPO_APP_NAME}_debug_${VERSION}.ipa" "$GITHUB_WORKSPACE/"
+
+          echo "IPA 已移动到 $GITHUB_WORKSPACE/"
+
+      - name: Upload IPA to Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios_debug_no_sign
+          path: ./*.ipa
