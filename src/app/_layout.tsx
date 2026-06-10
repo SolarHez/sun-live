@@ -24,7 +24,6 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="(test)" options={{ headerShown: false }} />
           </Stack>
-          <StatusBar style="auto" />
         </ThemeProvider>
       </View>
     </GestureHandlerRootView>

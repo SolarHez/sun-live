@@ -9,7 +9,10 @@ export default function TestLayout() {
       <Tabs.Screen name="player" options={{ title: "播放URL测试页" }} />
       <Tabs.Screen
         name="video"
-        options={{ title: "视频测试页", headerShown: false }}
+        options={{
+          title: "视频测试页",
+          headerShown: false,
+        }}
       />
     </Tabs>
   );

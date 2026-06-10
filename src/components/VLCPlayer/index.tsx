@@ -1,4 +1,4 @@
-import { Dimensions, Modal, Pressable, StatusBar, View } from "react-native";
+import { Dimensions, Modal, Pressable, View } from "react-native";
 import { VLCPlayer } from "react-native-vlc-media-player";
 import { useEffect, useRef, useState } from "react";
 import { cssInterop } from "nativewind";
@@ -88,9 +88,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
         await ScreenOrientation.lockAsync(
           ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT,
         );
-        await ScreenOrientation.lockAsync(
-          ScreenOrientation.OrientationLock.LANDSCAPE,
-        );
       }
       setIsFullscreen(!isFullscreen);
     } catch (error) {
@@ -161,7 +158,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
 
   return (
     <Modal visible={true} supportedOrientations={["portrait", "landscape"]}>
-      <StatusBar hidden={isFullscreen} animated />
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View
           className="flex-1"
