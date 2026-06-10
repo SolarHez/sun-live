@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react-native";
 import { useState } from "react";
 import { cssInterop } from "nativewind";
-import Orientation from "react-native-orientation";
+import * as ScreenOrientation from "expo-screen-orientation";
 
 cssInterop(Pressable, { className: "style" });
 
@@ -23,11 +23,15 @@ export const VLCVideo = ({ url }: VideoPlayerProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const httpsUrl = url.replace("http://", "https://") || "";
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = async () => {
     if (isFullscreen) {
-      Orientation.lockToPortrait(); // 切换到竖屏
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.LANDSCAPE,
+      ); // 切换到横屏
     } else {
-      Orientation.lockToLandscape(); // 切换到横屏
+      await ScreenOrientation.lockAsync(
+        ScreenOrientation.OrientationLock.PORTRAIT,
+      ); // 切换到竖屏
     }
     setIsFullscreen(!isFullscreen);
   };
