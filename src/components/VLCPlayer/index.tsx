@@ -4,6 +4,7 @@ import AppIcon from "../AppIcons";
 import {
   IconChevronLeft,
   IconMaximize,
+  IconMinimize,
   IconPlayerPauseFilled,
   IconPlayerPlayFilled,
 } from "@tabler/icons-react-native";
@@ -23,17 +24,28 @@ export const VLCVideo = ({ url }: VideoPlayerProps) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const httpsUrl = url.replace("http://", "https://") || "";
 
-  const toggleFullscreen = async () => {
+  const handleBackPress = () => {
     if (isFullscreen) {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.LANDSCAPE,
-      ); // 切换到横屏
-    } else {
-      await ScreenOrientation.lockAsync(
-        ScreenOrientation.OrientationLock.PORTRAIT,
-      ); // 切换到竖屏
+      toggleFullscreen();
+      return;
     }
-    setIsFullscreen(!isFullscreen);
+  };
+
+  const toggleFullscreen = async () => {
+    try {
+      if (isFullscreen) {
+        await ScreenOrientation.lockAsync(
+          ScreenOrientation.OrientationLock.PORTRAIT_UP,
+        );
+      } else {
+        await ScreenOrientation.lockAsync(
+          ScreenOrientation.OrientationLock.LANDSCAPE_LEFT,
+        );
+      }
+      setIsFullscreen(!isFullscreen);
+    } catch (error) {
+      console.error("屏幕方向切换失败:", error);
+    }
   };
 
   return (
@@ -43,10 +55,7 @@ export const VLCVideo = ({ url }: VideoPlayerProps) => {
         <View className="h-full relative">
           <View className=" h-12 absolute top-0 w-full px-2 flex justify-center">
             <View className="flex flex-row items-center justify-between">
-              <Pressable
-                onPress={() => setPaused(!paused)}
-                className="p-2 h-full"
-              >
+              <Pressable onPress={handleBackPress} className="p-2 h-full">
                 <AppIcon
                   icon={IconChevronLeft}
                   className="text-white text-center"
@@ -67,9 +76,12 @@ export const VLCVideo = ({ url }: VideoPlayerProps) => {
                   className="text-white text-center"
                 />
               </Pressable>
-              <Pressable onPress={toggleFullscreen} className="p-2 h-full">
+              <Pressable
+                onPress={async () => await toggleFullscreen()}
+                className="p-2 h-full"
+              >
                 <AppIcon
-                  icon={IconMaximize}
+                  icon={isFullscreen ? IconMinimize : IconMaximize}
                   className="text-white text-center"
                 />
               </Pressable>

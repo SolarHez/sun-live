@@ -3,7 +3,7 @@
     "name": "SunLive",
     "slug": "sunlive-app",
     "version": "1.0.12",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "sunlive",
     "userInterfaceStyle": "automatic",
@@ -14,9 +14,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "UIBackgroundModes": [
-          "audio"
-        ]
+        "UIBackgroundModes": ["audio"]
       }
     },
     "android": {
@@ -26,9 +24,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.solarhez.sunlive",
-      "permissions": [
-        "INTERNET"
-      ]
+      "permissions": ["INTERNET"]
     },
     "web": {
       "output": "static",
