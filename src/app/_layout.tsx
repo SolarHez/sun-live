@@ -17,7 +17,7 @@ global.process = process;
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 60 * 24, // 24小时内认为数据是新鲜的
+      staleTime: 1000 * 60, // 1分钟认为数据是新鲜的
       gcTime: 1000 * 60 * 60 * 24 * 7, // 离线缓存保留7天
       networkMode: "offlineFirst", // 核心：优先从缓存读取，没网不报错
     },

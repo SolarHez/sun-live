@@ -34,15 +34,6 @@ export const TitleTabs = () => {
           </TabsTrigger>
         ))}
       </TabsList>
-      <TabsContent value="all">
-        <Text className="text-foreground will-change-variable">全部直播</Text>
-      </TabsContent>
-      <TabsContent value="douyu">
-        <Text className="text-foreground will-change-variable">斗鱼直播</Text>
-      </TabsContent>
-      <TabsContent value="huya">
-        <Text className="text-foreground will-change-variable">虎牙直播</Text>
-      </TabsContent>
     </Tabs>
   );
 };
