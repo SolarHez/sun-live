@@ -1,7 +1,7 @@
 import { Dimensions, Modal, Pressable, View } from "react-native";
 import { VLCPlayer } from "react-native-vlc-media-player";
 import { useEffect, useRef, useState } from "react";
-import { cssInterop } from "nativewind";
+
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,9 +11,6 @@ import {
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import SystemSetting from "react-native-system-setting";
-
-cssInterop(Pressable, { className: "style" });
-cssInterop(Modal, { className: "style" });
 
 interface VideoPlayerProps {
   url: string;
