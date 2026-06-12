@@ -1,6 +1,6 @@
 import axios from "axios";
-import { ClassOptionBase } from "../../base/classOptionBase";
 import { LeftNavCateList } from "../../types/douyu/classOption.type";
+import { ClassOptionBase } from "../../base/classOptionBase";
 
 export async function getClassOption() {
   try {
@@ -8,12 +8,10 @@ export async function getClassOption() {
       `https://www.douyu.com/japi/weblist/apinc/newDirectory`,
     );
     const { cateList } = data?.data?.leftNavV2 || {};
+
     if (!cateList) return null;
     // 1. 预处理分类列表
-    const filteredList = cateList.filter(
-      (item: any) => item.cname !== "正能量",
-    );
-
+    const filteredList = cateList.filter((item: any) => item.cn1 !== "正能量");
     // 2. 并发请求处理（增加错误容错）
     const requestsData = await Promise.all(
       filteredList.map(async (item: any) => {
@@ -22,8 +20,8 @@ export async function getClassOption() {
             `https://www.douyu.com/japi/weblist/apinc/getC2List`,
             {
               params: {
-                shortName: item.cname,
-                customClassId: item.cid,
+                shortName: item.cn1,
+                customClassId: item.id,
                 offset: 0,
                 limit: 200,
               },
@@ -37,7 +35,6 @@ export async function getClassOption() {
         }
       }),
     );
-
     // 3. 组合数据并过滤无效结果
     return requestsData
       .map((res, index) => {
@@ -45,7 +42,8 @@ export async function getClassOption() {
         if (!list) return null; // 过滤掉请求失败或数据为空的项
 
         return {
-          ...filteredList[index],
+          cid: filteredList[index].id,
+          cname: filteredList[index].cn1,
           list: list.map((live: LeftNavCateList) =>
             ClassOptionBase.fromDouyu(live),
           ),

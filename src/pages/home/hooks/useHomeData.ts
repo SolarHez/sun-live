@@ -1,3 +1,4 @@
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import douyu from "@/servers/core/douyu";
 import huya from "@/servers/core/huya";
 import { useQuery } from "@tanstack/react-query";
@@ -13,10 +14,13 @@ export const useHomeData = () => {
     return [...douyuRooms, ...huyaRooms];
   };
 
-  const { data, isLoading, isFetching, error } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ["homeRooms"],
     queryFn: async () => await getAllHomeRooms(),
+    staleTime: 1000 * 60, // 1分钟认为数据是新鲜的
   });
+
+  useRefreshOnFocus(refetch); // 监听焦点变化，当窗口重新聚焦时触发 refetch
 
   const [value, setValue] = useState("all");
   const sortedData = useMemo(() => {

@@ -25,7 +25,7 @@ export async function getPlayUrl(room_id: number) {
       GetCdnTokenInfoExRsp,
     );
     const antiCode = await buildAntiCode(sStreamName, lChannelId, sFlvToken);
-    console.log(antiCode);
+    // console.log(antiCode);
     const url = new URL(`${sFlvUrl}/${sStreamName}.flv?${antiCode}`);
     url.searchParams.append("codec", "264");
     url.searchParams.append("ratio", "0");

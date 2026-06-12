@@ -10,6 +10,7 @@ export class HuyaSocketClient {
   private roomId: string;
   private socket: WebSocket | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private isInitiatedClose = false;
 
   // 回调函数定义
   public onMessage?: (data: any) => void;
@@ -104,19 +105,36 @@ export class HuyaSocketClient {
   /**
    * 处理错误
    */
-  private handleError() {
-    console.error("连接错误");
+  private handleError(event: Event) {
+    if (this.isInitiatedClose || this.socket?.readyState === 3) {
+      return;
+    }
+    console.error("[弹幕系统-虎牙] 连接错误", {
+      roomId: this.roomId,
+      readyState: this.socket?.readyState,
+      url: this.socket?.url,
+      event,
+    });
   }
 
   /**
    * 处理关闭
    */
   public handleClose() {
+    if (this.isInitiatedClose) return;
+    this.isInitiatedClose = true;
     console.log("连接关闭");
     // 关闭心跳定时器
     this.stopHeartbeat();
     // 关闭 WebSocket 连接
-    this.socket?.close();
-    this.socket = null;
+    if (this.socket) {
+      // 移除所有监听器，彻底防止卸载后的回调乱跑
+      this.socket.onerror = null;
+      this.socket.onclose = null;
+      this.socket.onmessage = null;
+
+      this.socket.close();
+      this.socket = null;
+    }
   }
 }

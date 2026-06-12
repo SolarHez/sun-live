@@ -1,31 +1,80 @@
-import { Dimensions, Modal, Pressable, View } from "react-native";
+import {
+  Dimensions,
+  Pressable,
+  View,
+  Text,
+  ActivityIndicator,
+} from "react-native";
 import { VLCPlayer } from "react-native-vlc-media-player";
 import { useEffect, useRef, useState } from "react";
 
 import * as ScreenOrientation from "expo-screen-orientation";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Gesture,
   GestureDetector,
   GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import SystemSetting from "react-native-system-setting";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { getCurrentTime } from "./utils/time";
 
 interface VideoPlayerProps {
   url: string;
+  title?: string;
   children?: React.ReactNode;
+  onFullscreenChange?: (isFullscreen: boolean) => void;
 }
 
-export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
+export const VLCVideo = ({
+  url,
+  title,
+  children,
+  onFullscreenChange,
+}: VideoPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [paused, setPaused] = useState<boolean>(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showControls, setShowControls] = useState(true);
+  const [isBuffering, setIsBuffering] = useState(false);
   const httpsUrl = url.replace("http://", "https://") || "";
-  const insets = useSafeAreaInsets();
+  const router = useRouter();
 
-  const originalBrightnessRef = useRef<number>(0.25);
+  const bufferTimeRef = useRef<number>(0);
+  const bufferIntervalRef = useRef<any>(null);
+
+  const handleBuffering = () => {
+    setIsBuffering(true);
+    bufferTimeRef.current = new Date().getTime();
+
+    if (!bufferIntervalRef.current) {
+      bufferIntervalRef.current = setInterval(() => {
+        const currentTime = new Date().getTime();
+        const diffTime = currentTime - bufferTimeRef.current;
+        if (diffTime > 1000) {
+          clearInterval(bufferIntervalRef.current);
+          bufferIntervalRef.current = null;
+          setIsBuffering(false);
+          console.log("缓冲完成");
+        }
+      }, 250);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (bufferIntervalRef.current) {
+        clearInterval(bufferIntervalRef.current);
+      }
+    };
+  }, []);
+
+  const originalBrightnessRef = useRef<number>(0.5);
 
   // 进入时保存原始亮度
   useEffect(() => {
@@ -45,7 +94,9 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
     if (!isFullscreen) {
       SystemSetting.setAppBrightness(originalBrightnessRef.current);
     }
-  }, [isFullscreen]);
+
+    onFullscreenChange?.(isFullscreen);
+  }, [isFullscreen, onFullscreenChange]);
 
   // 组件挂载时重置方向状态
   useEffect(() => {
@@ -73,6 +124,7 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
       toggleFullscreen();
       return;
     }
+    router.back();
   };
 
   const toggleFullscreen = async () => {
@@ -102,13 +154,22 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
     }
   };
 
+  const controlsOpacity = useSharedValue(0);
+  const controlsAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: controlsOpacity.value,
+    pointerEvents: controlsOpacity.value > 0.5 ? "auto" : "none",
+  }));
+
+  const newTime = useRef<string>("");
   const controlsTimeoutRef = useRef<any>(null);
   const handleControlsPress = () => {
     clearTimeout(controlsTimeoutRef.current);
-    setShowControls(false);
+    newTime.current = getCurrentTime();
+    const value = controlsOpacity.value === 1 ? 0 : 1;
+    controlsOpacity.value = withTiming(value, { duration: 300 });
     controlsTimeoutRef.current = setTimeout(() => {
-      setShowControls(true);
-    }, 2000);
+      controlsOpacity.value = withTiming(0, { duration: 300 });
+    }, 6000);
   };
 
   const singleTap = Gesture.Tap()
@@ -129,7 +190,6 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
   const BrightnessRef = useRef<number>(0.25);
   const drag = Gesture.Pan()
     .onStart(() => {
-      handleControlsPress();
       SystemSetting.getVolume().then((vol) => {
         VolumeRef.current = vol;
       });
@@ -145,7 +205,7 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
         console.log("亮度区域", brightness + BrightnessRef.current);
       } else {
         const volume = 0 - e.translationY * 0.01;
-        SystemSetting.setVolume(VolumeRef.current + volume);
+        SystemSetting.setVolume(VolumeRef.current + volume, { showUI: true });
         console.log("音量区域", volume + VolumeRef.current);
       }
     })
@@ -154,36 +214,32 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
   const gesture = Gesture.Exclusive(doubleTap, singleTap, drag);
 
   return (
-    <Modal visible={true} supportedOrientations={["portrait", "landscape"]}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View
-          className="flex-1"
-          style={{ paddingTop: isFullscreen ? 0 : insets.top }}
-        >
-          <View
-            className={
-              isFullscreen ? "w-full h-full bg-black" : "w-full h-1/3 bg-black"
-            }
-          >
-            <VLCPlayer
-              style={{ flex: 1 }}
-              videoAspectRatio="16:9"
-              source={{ uri: httpsUrl }}
-              onPlaying={() => setIsPlaying(true)}
-              onPaused={() => setIsPlaying(false)}
-              paused={paused}
-            />
-            <GestureDetector gesture={gesture}>
-              <View className="w-full h-full absolute z-50 inset-0">
-                {/* 控制层 */}
-                <View
-                  className={`absolute z-50 inset-0 w-full h-full ${showControls ? "opacity-0" : "opacity-100"}`}
-                >
-                  <View className="h-full relative">
-                    <View
-                      className={`h-12 absolute top-0 w-full  flex justify-center`}
-                    >
-                      <View className="flex flex-row items-center justify-between">
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className="flex-1">
+        <View className="w-full h-full bg-black">
+          <VLCPlayer
+            style={{ flex: 1 }}
+            videoAspectRatio="16:9"
+            source={{ uri: httpsUrl }}
+            onPlaying={() => {
+              setIsPlaying(true);
+              setIsBuffering(false);
+            }}
+            onPaused={() => setIsPlaying(false)}
+            paused={paused}
+            onBuffering={handleBuffering}
+          />
+          <GestureDetector gesture={gesture}>
+            <View className="w-full h-full absolute z-50 inset-0">
+              {/* 控制层 */}
+              <View className="absolute z-50 inset-0 w-full h-full ">
+                <View className="h-full relative">
+                  <Animated.View
+                    style={controlsAnimatedStyle}
+                    className="h-12 absolute top-0 w-full  flex justify-center z-10"
+                  >
+                    <View className="flex flex-row items-center  w-full relative">
+                      <View className="flex flex-row items-center">
                         <Pressable
                           onPress={handleBackPress}
                           className="p-2 h-full"
@@ -194,40 +250,74 @@ export const VLCVideo = ({ url, children }: VideoPlayerProps) => {
                             color="white"
                           />
                         </Pressable>
+                        {title && (
+                          <Text className="text-xl font-bold text-white max-w-65 line-clamp-1">
+                            {title}
+                          </Text>
+                        )}
                       </View>
+                      {isFullscreen && (
+                        <View className="absolute w-full h-full flex justify-center items-center">
+                          <Text className="text-white text-center font-semibold">
+                            {newTime.current}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <View className=" h-12 absolute bottom-0 w-full px-2 flex justify-center">
-                      <View className="flex flex-row items-center justify-between">
-                        <Pressable
-                          onPress={() => setPaused(!paused)}
-                          className="p-2 h-full"
-                        >
-                          {isPlaying ? (
-                            <Ionicons name="pause" size={24} color="white" />
-                          ) : (
-                            <Ionicons name="play" size={24} color="white" />
-                          )}
-                        </Pressable>
-                        <Pressable
-                          onPress={async () => await toggleFullscreen()}
-                          className="p-2 h-full"
-                        >
-                          {isFullscreen ? (
-                            <Feather name="minimize" size={24} color="white" />
-                          ) : (
-                            <Feather name="maximize" size={24} color="white" />
-                          )}
-                        </Pressable>
-                      </View>
+                  </Animated.View>
+                  <Animated.View
+                    style={controlsAnimatedStyle}
+                    className=" z-10 h-12 absolute bottom-0 w-full px-2 flex justify-center"
+                  >
+                    <View className="flex flex-row items-center justify-between">
+                      <Pressable
+                        onPress={() => setPaused(!paused)}
+                        className="p-2 h-full"
+                      >
+                        {isPlaying ? (
+                          <Ionicons name="pause" size={24} color="white" />
+                        ) : (
+                          <Ionicons name="play" size={24} color="white" />
+                        )}
+                      </Pressable>
+                      <Pressable
+                        onPress={async () => await toggleFullscreen()}
+                        className="p-2 h-full"
+                      >
+                        {isFullscreen ? (
+                          <Feather name="minimize" size={24} color="white" />
+                        ) : (
+                          <Feather name="maximize" size={24} color="white" />
+                        )}
+                      </Pressable>
                     </View>
-                  </View>
+                  </Animated.View>
+                  <Animated.View
+                    style={controlsAnimatedStyle}
+                    className="absolute bottom-0 left-0 right-0 h-full"
+                  >
+                    <LinearGradient
+                      colors={[
+                        "rgba(0, 0, 0, 0.5)",
+                        "rgba(0, 0, 0, 0)",
+                        "rgba(0, 0, 0, 0)",
+                        "rgba(0, 0, 0, 0.5)",
+                      ]}
+                      style={{ flex: 1 }}
+                    ></LinearGradient>
+                  </Animated.View>
+                  {isBuffering && (
+                    <View className="absolute bottom-0 left-0 right-0 h-full flex justify-center items-center">
+                      <ActivityIndicator className="flex-1 justify-center items-center" />
+                    </View>
+                  )}
                 </View>
               </View>
-            </GestureDetector>
-          </View>
-          {!isFullscreen && <View>{children}</View>}
+            </View>
+          </GestureDetector>
         </View>
-      </GestureHandlerRootView>
-    </Modal>
+        {!isFullscreen && <View>{children}</View>}
+      </View>
+    </GestureHandlerRootView>
   );
 };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { ClassRoomsBase } from "../../base/classRoomsBase";
+import { ClassOptionBase } from "../../base/classOptionBase";
 
 export async function getClassOption() {
   try {
@@ -35,7 +35,7 @@ export async function getClassOption() {
     return requestsData.map((item, index: number) => {
       return {
         ...typeData[index],
-        list: item.map((item: any) => ClassRoomsBase.fromHuya(item)),
+        list: item.map((item: any) => ClassOptionBase.fromHuya(item)),
       };
     });
   } catch (error) {

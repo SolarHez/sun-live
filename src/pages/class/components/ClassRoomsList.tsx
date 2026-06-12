@@ -11,7 +11,11 @@ import { useRouter } from "expo-router";
 const StyledImage = styled(Image);
 const StyledPress = styled(Pressable as any);
 
-export const RoomsList = ({ data }: { data: NoInfer<any[]> | undefined }) => {
+export const ClassRoomsList = ({
+  data,
+}: {
+  data: NoInfer<any[]> | undefined;
+}) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 

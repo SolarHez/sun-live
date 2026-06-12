@@ -17,7 +17,6 @@ export function standardizedFormat(data: any): LiveDanmuItem {
       inputBuffer.readBytes(1, false, Tars.BinBuffer),
     );
     const SecPackType = inputBuffer.readUInt32(1, false);
-
     if (SecPackType === 1400) {
       inputBuffer = new Tars.TarsInputStream(
         inputBuffer.readBytes(2, false, Tars.BinBuffer),
