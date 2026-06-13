@@ -24,10 +24,12 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { getCurrentTime } from "./utils/time";
+import { SkiaDanmuku } from "./components/SkiaDanmu";
 
 interface VideoPlayerProps {
   url: string;
   title?: string;
+  danmu?: any;
   children?: React.ReactNode;
   onFullscreenChange?: (isFullscreen: boolean) => void;
 }
@@ -35,6 +37,7 @@ interface VideoPlayerProps {
 export const VLCVideo = ({
   url,
   title,
+  danmu,
   children,
   onFullscreenChange,
 }: VideoPlayerProps) => {
@@ -236,7 +239,7 @@ export const VLCVideo = ({
                 <View className="h-full relative">
                   <Animated.View
                     style={controlsAnimatedStyle}
-                    className="h-12 absolute top-0 w-full  flex justify-center z-10"
+                    className="h-12 absolute top-0 w-full  flex justify-center z-30"
                   >
                     <View className="flex flex-row items-center  w-full relative">
                       <View className="flex flex-row items-center">
@@ -267,7 +270,7 @@ export const VLCVideo = ({
                   </Animated.View>
                   <Animated.View
                     style={controlsAnimatedStyle}
-                    className=" z-10 h-12 absolute bottom-0 w-full px-2 flex justify-center"
+                    className=" z-30 h-12 absolute bottom-0 w-full px-2 flex justify-center"
                   >
                     <View className="flex flex-row items-center justify-between">
                       <Pressable
@@ -294,7 +297,7 @@ export const VLCVideo = ({
                   </Animated.View>
                   <Animated.View
                     style={controlsAnimatedStyle}
-                    className="absolute bottom-0 left-0 right-0 h-full"
+                    className="absolute bottom-0 left-0 right-0 h-full z-20"
                   >
                     <LinearGradient
                       colors={[
@@ -311,6 +314,9 @@ export const VLCVideo = ({
                       <ActivityIndicator className="flex-1 justify-center items-center" />
                     </View>
                   )}
+                  <View className="absolute bottom-0 left-0 right-0 h-full z-10">
+                    <SkiaDanmuku danmu={danmu} />
+                  </View>
                 </View>
               </View>
             </View>

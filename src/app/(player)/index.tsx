@@ -50,12 +50,13 @@ export default function Player() {
   return (
     <View
       className={cn(
-        "w-full h-full bg-background",
+        "w-full flex-1 bg-background",
         isFullscreen ? "bg-black" : "bg-background",
       )}
       style={{
         paddingTop: isFullscreen ? 0 : insets.top,
-        paddingBottom: isFullscreen ? 0 : insets.bottom,
+        paddingBottom:
+          Platform.OS === "ios" ? (isFullscreen ? 0 : insets.bottom) : 0,
         paddingHorizontal: insets.left,
         paddingRight: insets.right,
       }}
@@ -64,6 +65,7 @@ export default function Player() {
         <VLCVideo
           url={playerUrl || ""}
           title={roomData.title || ""}
+          danmu={danmuList[danmuList.length - 1] || {}}
           onFullscreenChange={handleFullscreenChange}
         ></VLCVideo>
       </View>
@@ -168,7 +170,11 @@ export default function Player() {
           <Input
             keyboardType="default"
             placeholder="发送弹幕"
-            style={{ height: 40, borderRadius: 20, width: "90%" }}
+            style={{
+              height: 40,
+              borderRadius: 20,
+              width: "90%",
+            }}
           />
           <Ionicons
             name="settings-outline"
