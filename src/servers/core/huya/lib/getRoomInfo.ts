@@ -6,6 +6,7 @@ export async function getRoomInfo(room_id: number, type?: string) {
     const { data } = await axios.get(
       `https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=${room_id}`,
     );
+
     if (type === "uid") {
       return RoomInfoBase.fromHuyaUid(data.data);
     }

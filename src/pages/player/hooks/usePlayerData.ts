@@ -2,7 +2,7 @@ import douyu from "@/servers/core/douyu";
 import huya from "@/servers/core/huya";
 import followSql from "@/sql/sqliteFollow";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWebsocket, WsPlatformMap } from "./useWebsocket";
 
 interface PlayerData {
@@ -20,7 +20,13 @@ interface PlayerData {
 }
 
 export const usePlayerData = ({ data }: { data: PlayerData }) => {
-  const roomData = JSON.parse(data.toString());
+  const roomData = useMemo(() => {
+    try {
+      return JSON.parse(data.toString());
+    } catch {
+      return data;
+    }
+  }, [data]);
   const { rid, platform, title } = roomData;
   const getPlayerUrl = async () => {
     if (!rid || !platform || !title) return "";
@@ -42,7 +48,7 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
     isFetching,
     error,
   } = useQuery({
-    queryKey: ["playerUrl"],
+    queryKey: ["playerUrl", rid, platform],
     queryFn: async () => await getPlayerUrl(),
   });
 
@@ -50,8 +56,14 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
   const [danmuList, setDanmuList] = useState<any[]>([]);
   useWebsocket(String(rid), platform as keyof WsPlatformMap, async (data) => {
     // console.log(data);
+    if (!data) return;
     if (data.type === "danmu" || data.type === "msg") {
-      setDanmuList([...danmuList, data]);
+      setDanmuList((prev) => {
+        if (prev.length > 50) {
+          return [...prev.slice(1), data];
+        }
+        return [...prev, data];
+      });
     }
     if (data.type === "online") {
       console.log(data);
@@ -75,7 +87,7 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
     followSql.isFollow(roomData).then((res) => {
       setIsFollow(res);
     });
-  }, [roomData]);
+  }, [rid, platform, title]);
 
   return {
     playerUrl,

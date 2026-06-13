@@ -50,7 +50,13 @@ export class RoomInfoBase {
 
   static fromHuyaUid(raw: Data) {
     const liveData = raw.liveData;
-    const dto = new RoomInfoBase();
+    const dto = {
+      yyid: 0,
+      uid: 0,
+      lChannelId: 0,
+      lSubChannelId: 0,
+      platform: "",
+    };
     dto.yyid = liveData?.yyid || 0;
     dto.uid = liveData?.uid || 0;
     dto.lChannelId = liveData?.channel || 0;

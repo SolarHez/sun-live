@@ -13,7 +13,7 @@ export default function Index() {
   if (isLoading) {
     return (
       <ActivityIndicator
-        className="flex-1 justify-center items-center"
+        className="flex-1 h-full justify-center items-center"
         size="large"
       />
     );

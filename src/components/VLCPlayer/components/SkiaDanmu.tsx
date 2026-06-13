@@ -22,7 +22,7 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
   const canvasSize = useSharedValue({ width: 0, height: 0 });
   const time = useSharedValue(0);
   const danmakus = useSharedValue<any[]>([]);
-  const fontSize = 20; // 字体大小
+  const fontSize = 16; // 字体大小
   const opacity = 1;
   const speed = 1.5;
   const maxTracks = 10;
@@ -36,6 +36,7 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
 
   useEffect(() => {
     if (!danmu.txt) return;
+    if (!canvasSize.value.height || !canvasSize.value.width) return;
     const newDanmuku = generateDanmukuWithTrack(
       danmu,
       canvasSize.value.height,
@@ -55,12 +56,15 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
 
   useFrameCallback(() => {
     // 核心：处理所有的移动逻辑
-    const next = danmakus.value
-      .map((d) => ({
-        ...d,
-        x: d.x - speed, // 靠这个减法实现移动
-      }))
-      .filter((d) => d.x > -300); // 靠这个过滤实现“弹幕消失”
+    const data = danmakus.value;
+    const next = [];
+
+    for (let i = 0; i < data.length; i++) {
+      if (!data[i].paragraph) continue;
+      if (data[i].x < -data[i].width) continue;
+      data[i].x = data[i].x - speed;
+      next.push(data[i]);
+    }
 
     danmakus.value = next;
   });
@@ -77,7 +81,9 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
     const recorder = Skia.PictureRecorder();
     // 初始化画布大小
     const { width, height } = canvasSize.value;
-    const canvas = recorder.beginRecording(Skia.XYWHRect(0, 0, width, height));
+    const canvas = recorder.beginRecording(
+      Skia.XYWHRect(0, 0, width || 0, height || 0),
+    );
 
     time.value = time.value - 1;
     danmakus.value.forEach((d) => {
