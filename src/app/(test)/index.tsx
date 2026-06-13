@@ -1,29 +1,54 @@
-import { View, Text } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import {
+  Skia,
+  Canvas,
+  Picture,
+  matchFont,
+  TextAlign,
+  useFonts,
+} from "@shopify/react-native-skia";
+import { View, Button } from "react-native";
+import { useState } from "react";
 
-export default function Test() {
-  const singleTap = Gesture.Tap()
-    .onEnd(() => {
-      console.log("singleTap");
-    })
-    .runOnJS(true);
+export default function MyParagraph() {
+  const [picture, setPicture] = useState<any>(null);
 
-  const doubleTap = Gesture.Tap()
-    .numberOfTaps(2)
-    .onEnd(() => {
-      console.log("doubleTap");
-    })
-    .runOnJS(true);
+  const customFontMgr = useFonts({
+    Roboto: [require("../../../assets/fonts/NotoSansSC-Medium.ttf")],
+  });
 
-  const gesture = Gesture.Exclusive(doubleTap, singleTap);
+  const addText = () => {
+    const recorder = Skia.PictureRecorder();
+    const canvas = recorder.beginRecording(Skia.XYWHRect(0, 0, 256, 256));
 
+    if (!customFontMgr) return;
+    const paragraphStyle = {
+      textAlign: TextAlign.Center,
+    };
+    const textStyle = {
+      color: Skia.Color("black"),
+      fontSize: 10,
+    };
+    const paragraph = Skia.ParagraphBuilder.Make(paragraphStyle, customFontMgr)
+      .pushStyle(textStyle)
+      .addText("Say Hello to Skia 🙂")
+      .pop()
+      .build();
+
+    paragraph.layout(256);
+    paragraph.paint(canvas, 10, 100);
+
+    // 完成录制并更新状态
+    const pic = recorder.finishRecordingAsPicture();
+    setPicture(pic);
+  };
+
+  // Render the paragraph
   return (
-    <View>
-      <GestureDetector gesture={gesture}>
-        <View style={{ width: 100, height: 100, backgroundColor: "red" }}>
-          <Text>Test</Text>
-        </View>
-      </GestureDetector>
+    <View style={{ flex: 1 }}>
+      <Canvas style={{ width: 256, height: 256 }}>
+        {picture && <Picture picture={picture} />}
+      </Canvas>
+      <Button title="添加文字" onPress={addText} />
     </View>
   );
 }

@@ -1,3 +1,5 @@
+import { Skia, TextAlign } from "@shopify/react-native-skia";
+
 interface DanmukuOptions {
   fontSize?: number;
   padding?: number;
@@ -20,15 +22,11 @@ export const generateDanmukuWithTrack = (
   currentDanmakus: any[],
   font: any, // 必须传入 font 对象
   options?: DanmukuOptions,
+  customFontMgr?: any,
 ) => {
-  // 1. 获取精确宽度
-  const textWidth = font
-    ? font.measureText(danmu.txt).width
-    : danmu.txt.length * 24;
-
   const FONT_SIZE = options?.fontSize || 16; // 字体大小
   const PADDING = options?.padding || 3; // 弹幕轨道内边距
-  const TOP_SAFETY = FONT_SIZE + 2; // 顶部安全距离，避免与文字重叠
+  const TOP_SAFETY = 2; // 顶部安全距离，避免与文字重叠
   const TRACK_HEIGHT = FONT_SIZE + PADDING; // 弹幕轨道高度
   const SAFE_DISTANCE = options?.safeDistance || 5; // 安全距离，避免与弹幕重叠
 
@@ -42,7 +40,8 @@ export const generateDanmukuWithTrack = (
     if (trackIndex >= 0 && trackIndex < maxTracks) {
       // 核心：使用该弹幕的实际宽度来判断危险区
       // 这里你需要存储弹幕的宽度，或者重新测量（若弹幕很多，建议在创建时把 width 存进对象里）
-      const dWidth = d.width || 100; // 建议在生成弹幕时就存好 width
+
+      const dWidth = d.width || 500; // 建议在生成弹幕时就存好 width
 
       const isDangerous = d.x > screenWidth - dWidth - SAFE_DISTANCE;
       if (isDangerous) {
@@ -51,14 +50,68 @@ export const generateDanmukuWithTrack = (
     }
   });
 
+  let textWidth = 0;
+  const createBulletText = (text: string, color: string) => {
+    if (!customFontMgr) return;
+    const paragraphStyle = {
+      textAlign: TextAlign.Start,
+    };
+
+    const textStyle = {
+      fontSize: FONT_SIZE,
+      shadows: [
+        {
+          color: Skia.Color(`rgba(0, 0, 0, 0.5)`),
+          blurRadius: 0,
+          offset: { x: -1, y: 0 },
+        },
+        {
+          color: Skia.Color(`rgba(0, 0, 0, 0.5)`),
+          blurRadius: 0,
+          offset: { x: 1, y: 0 },
+        },
+        {
+          color: Skia.Color(`rgba(0, 0, 0, 0.5)`),
+          blurRadius: 0,
+          offset: { x: 0, y: -1 },
+        },
+        {
+          color: Skia.Color(`rgba(0, 0, 0, 0.5)`),
+          blurRadius: 0,
+          offset: { x: 0, y: 1 },
+        },
+        {
+          color: Skia.Color(`rgba(0, 0, 0, 0.2)`),
+          blurRadius: 2,
+          offset: { x: 1, y: 1 },
+        },
+      ],
+    };
+
+    // 填充画笔（白色）
+    const fillPaint = Skia.Paint();
+    fillPaint.setColor(Skia.Color(color || "white"));
+
+    const paragraph = Skia.ParagraphBuilder.Make(paragraphStyle, customFontMgr)
+      .pushStyle(textStyle, fillPaint)
+      .addText(text)
+      .pop()
+      .build();
+    paragraph.layout(5000);
+    textWidth = paragraph.getLongestLine() + SAFE_DISTANCE;
+    return paragraph;
+  };
+
   // 按顺序轮询找空位
   for (let i = 0; i < maxTracks; i++) {
     if (!trackOccupancy[i]) {
+      const paragraph = createBulletText(danmu.txt, danmu.color);
       return {
         ...danmu,
         x: screenWidth,
         y: TOP_SAFETY + i * TRACK_HEIGHT,
         width: textWidth,
+        paragraph,
       };
     }
   }

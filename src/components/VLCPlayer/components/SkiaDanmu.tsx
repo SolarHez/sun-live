@@ -1,11 +1,10 @@
 import { Platform, useWindowDimensions } from "react-native";
 import {
   Canvas,
-  listFontFamilies,
-  matchFont,
   Picture,
   Skia,
   useFont,
+  useFonts,
 } from "@shopify/react-native-skia";
 import {
   useDerivedValue,
@@ -23,13 +22,17 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
   const canvasSize = useSharedValue({ width: 0, height: 0 });
   const time = useSharedValue(0);
   const danmakus = useSharedValue<any[]>([]);
-  const fontSize = 16; // 字体大小
+  const fontSize = 20; // 字体大小
   const opacity = 1;
-  const speed = 1;
+  const speed = 1.5;
+  const maxTracks = 10;
   const font = useFont(
     require("../../../../assets/fonts/NotoSansSC-Medium.ttf"),
     fontSize,
   );
+  const customFontMgr = useFonts({
+    Roboto: [require("../../../../assets/fonts/NotoSansSC-Bold.ttf")],
+  });
 
   useEffect(() => {
     if (!danmu.txt) return;
@@ -41,8 +44,9 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
       font,
       {
         fontSize,
-        maxTracks: 5,
+        maxTracks,
       },
+      customFontMgr,
     );
     if (newDanmuku) {
       danmakus.value = [...danmakus.value, newDanmuku];
@@ -77,33 +81,18 @@ export function SkiaDanmuku({ danmu }: { danmu?: any }) {
 
     time.value = time.value - 1;
     danmakus.value.forEach((d) => {
-      if (!font) return;
-
-      // 阴影画笔（偏移绘制实现阴影）
-      const shadowPaint = Skia.Paint();
-      shadowPaint.setColor(Skia.Color(`rgba(0, 0, 0, ${opacity * 0.2})`));
-
-      // 描边画笔（黑色）
-      const strokePaint = Skia.Paint();
-      strokePaint.setColor(Skia.Color(`rgba(0, 0, 0, ${opacity * 0.2})`));
-      strokePaint.setStyle(1); // 0.5 = Stroke
-      strokePaint.setStrokeWidth(3);
-
-      // 填充画笔（白色）
-      const fillPaint = Skia.Paint();
-      fillPaint.setColor(Skia.Color(`rgba(255, 255, 255, ${opacity})`));
-      const blob = Skia.TextBlob.MakeFromText(d.txt, font);
-      // 绘制顺序：阴影 -> 描边 -> 填充
-      canvas.drawTextBlob(blob, d.x, d.y + 1.5, shadowPaint);
-      canvas.drawTextBlob(blob, d.x, d.y, strokePaint);
-      canvas.drawTextBlob(blob, d.x, d.y, fillPaint);
+      if (!d.paragraph) return;
+      d.paragraph.paint(canvas, d.x, d.y);
     });
 
     return recorder.finishRecordingAsPicture();
   }, [time, font, canvasSize, opacity]);
 
   return (
-    <Canvas onSize={canvasSize} style={{ flex: 1, pointerEvents: "none" }}>
+    <Canvas
+      onSize={canvasSize}
+      style={{ flex: 1, pointerEvents: "none", opacity }}
+    >
       <Picture picture={picture} />
     </Canvas>
   );
