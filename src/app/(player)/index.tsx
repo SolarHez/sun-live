@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
 import { FontAwesome, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { Input } from "@/components/ui/input";
+import { HuyaWebView } from "@/servers/danmuku/huya/huya.webview";
 
 const StyledImage = styled(Image);
 const StyledPressable = styled(Pressable as any);
@@ -37,6 +38,9 @@ export default function Player() {
     onlineCount,
     handleFollow,
     isFollow,
+    platform,
+    rid,
+    handleMessage,
   } = usePlayerData({
     data: params.data,
   });
@@ -183,6 +187,14 @@ export default function Player() {
           />
         </View>
       </KeyboardAvoidingView>
+      {platform === "huya" && (
+        <HuyaWebView
+          roomId={String(rid)}
+          onMessage={async (data) => {
+            handleMessage(data);
+          }}
+        />
+      )}
     </View>
   );
 }

@@ -23,7 +23,7 @@ export const useWebsocket = (
   useEffect(() => {
     // 只有当参数都存在时才建立连接
     if (!rid || !platform) return;
-
+    if (platform === "huya") return;
     console.log(`正在连接 WebSocket: 平台 ${platform}, 房间 ${rid}`);
     const client = PLATFORM[platform](rid);
 

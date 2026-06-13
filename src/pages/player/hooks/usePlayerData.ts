@@ -52,10 +52,7 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
     queryFn: async () => await getPlayerUrl(),
   });
 
-  const [onlineCount, setOnlineCount] = useState<any>({});
-  const [danmuList, setDanmuList] = useState<any[]>([]);
-  useWebsocket(String(rid), platform as keyof WsPlatformMap, async (data) => {
-    // console.log(data);
+  const handleMessage = async (data: any) => {
     if (!data) return;
     if (data.type === "danmu" || data.type === "msg") {
       setDanmuList((prev) => {
@@ -69,6 +66,13 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
       console.log(data);
       setOnlineCount(data);
     }
+  };
+
+  const [onlineCount, setOnlineCount] = useState<any>({});
+  const [danmuList, setDanmuList] = useState<any[]>([]);
+  useWebsocket(String(rid), platform as keyof WsPlatformMap, async (data) => {
+    // console.log(data);
+    if (platform === "douyu") handleMessage(data);
   });
 
   const [isFollow, setIsFollow] = useState<boolean>(false);
@@ -100,5 +104,8 @@ export const usePlayerData = ({ data }: { data: PlayerData }) => {
     onlineCount,
     handleFollow,
     isFollow,
+    platform,
+    rid,
+    handleMessage,
   };
 };

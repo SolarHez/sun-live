@@ -1,5 +1,3 @@
-//WebSocket 基础封装 (建立连接/心跳)
-
 import huya from "../../core/huya";
 import { standardizedFormat } from "./huya.handlers";
 import { getHuyaRegisterData } from "./huya.parser";
@@ -11,45 +9,18 @@ export class HuyaSocketClient {
   private socket: WebSocket | null = null;
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private isInitiatedClose = false;
-  private HEARTBEAT_RAW_BYTES: Uint8Array;
-  private uiTimer: ReturnType<typeof setInterval> | null = null;
-  private lastMessageTime: number = 0;
-  private reconnectTimer: ReturnType<typeof setInterval> | null = null;
-  private messageCount = 0;
-  private messageQueue: any[] = [];
-  private flushTimer: ReturnType<typeof setInterval> | null = null;
+
+  // 回调函数定义
   public onMessage?: (data: any) => void;
-  private memoryTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(roomId: string) {
     this.roomId = roomId;
-    this.HEARTBEAT_RAW_BYTES = base64ToUint8Array("ABQdAAwsNgBM");
   }
 
+  /**
+   * 初始化连接服务器
+   */
   public connect() {
-    this.isInitiatedClose = false;
-
-    this.memoryTimer = setInterval(() => {
-      if ((global as any).HermesInternal) {
-        const stats = (
-          (global as any).HermesInternal as any
-        ).getInstrumentedStats?.();
-        if (stats) {
-          console.log((global as any).__turboModuleProxy);
-          console.log(
-            "[Hermes内存]",
-            "GC次数:",
-            stats.js_num_full_gc,
-            "堆大小:",
-            (stats.js_allocatedBytes / 1024 / 1024).toFixed(1),
-            "MB",
-            "消息:",
-            this.messageCount,
-          );
-        }
-      }
-    }, 2000);
-
     this.socket = new WebSocket(`wss://cdnws.api.huya.com`);
     this.socket.binaryType = "arraybuffer";
     this.socket.onopen = this.handleOpen.bind(this);
@@ -58,13 +29,18 @@ export class HuyaSocketClient {
     this.socket.onclose = this.handleClose.bind(this);
   }
 
+  /**
+   * 处理连接打开
+   */
   private handleOpen() {
     console.log(`[弹幕系统-虎牙] - 连接成功！房间ID: ${this.roomId}`);
-    this.lastMessageTime = Date.now();
-    this.startFlush();
+    // 连接成功后，发送注册并进入房间
     this.sendAndEnterRoom();
   }
 
+  /**
+   * 发送注册并进入房间
+   */
   private async sendAndEnterRoom() {
     if (!this.socket) return;
     this.onMessage?.({
@@ -72,6 +48,7 @@ export class HuyaSocketClient {
       name: "系统公告",
       txt: `开始准备为您连接弹幕，请稍后... `,
     });
+    // 发送注册包
     var joindata = await getHuyaRegisterData(Number(this.roomId));
     if (joindata) {
       this.socket.send(joindata as any);
@@ -81,48 +58,51 @@ export class HuyaSocketClient {
         txt: `弹幕系统连接成功！`,
       });
     }
+    // 发送心跳包
     this.startHeartbeat();
   }
 
+  /**
+   * 开始心跳
+   */
   private startHeartbeat() {
     if (!this.socket) return;
+    // 停止旧的心跳定时器
     this.stopHeartbeat();
+    // 开始新的心跳定时器
     this.heartbeatTimer = setInterval(() => {
       if (this.socket?.readyState === WebSocket.OPEN) {
-        this.socket.send(this.HEARTBEAT_RAW_BYTES);
+        // 发送心跳包
+        this.socket.send(base64ToUint8Array("ABQdAAwsNgBM") as any); //心跳包参数
+        console.log("心跳包发送");
       }
-    }, 30000);
+    }, 30000); // 每 30 秒发送一次心跳包
   }
 
+  /**
+   * 停止心跳
+   */
   private stopHeartbeat() {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
   }
-
-  private handleMessage(event: MessageEvent) {
-    this.lastMessageTime = Date.now();
-    this.messageCount++;
+  /**
+   * 处理收到的消息
+   */
+  private async handleMessage(event: MessageEvent) {
     const wsData = standardizedFormat(event.data as any);
     if (!isEmpty(wsData)) {
-      this.messageQueue.push(wsData);
+      if (wsData.type === "online") {
+        const data = (await huya.getVipOnline(Number(this.roomId))) as any;
+        this.onMessage?.({ ...wsData, vip: data.iTotal });
+        return;
+      }
+      this.onMessage?.(wsData);
     }
   }
 
-  private startFlush() {
-    this.flushTimer = setInterval(() => {
-      if (this.messageQueue.length > 0) {
-        const batch = this.messageQueue.splice(0);
-        const onlineMsg = batch.find((m) => m.type === "online");
-        if (onlineMsg) {
-          huya.getVipOnline(Number(this.roomId)).then((data: any) => {
-            this.onMessage?.({ ...onlineMsg, vip: data.iTotal });
-          });
-        }
-        const normalMsgs = batch.filter((m) => m.type !== "online");
-        this.onMessage?.({ type: "batch", data: normalMsgs });
-      }
-    }, 500);
-  }
-
+  /**
+   * 处理错误
+   */
   private handleError(event: Event) {
     console.error("[弹幕系统-虎牙] 连接错误", {
       roomId: this.roomId,
@@ -132,32 +112,24 @@ export class HuyaSocketClient {
     });
   }
 
-  private restart() {
-    this.cleanup();
-    this.connect();
-  }
-
-  private cleanup() {
-    this.stopHeartbeat();
-    if (this.uiTimer) clearInterval(this.uiTimer);
-    if (this.memoryTimer) clearInterval(this.memoryTimer);
-    if (this.reconnectTimer) clearInterval(this.reconnectTimer);
-    if (this.flushTimer) clearInterval(this.flushTimer);
-    this.messageQueue = [];
-    this.messageCount = 0;
-    if (this.socket) {
-      this.socket.onerror = null;
-      this.socket.onclose = null;
-      this.socket.onmessage = null;
-      this.socket.close();
-      this.socket = null;
-    }
-  }
-
+  /**
+   * 处理关闭
+   */
   public handleClose() {
     if (this.isInitiatedClose) return;
     this.isInitiatedClose = true;
     console.log("连接关闭");
-    this.cleanup();
+    // 关闭心跳定时器
+    this.stopHeartbeat();
+    // 关闭 WebSocket 连接
+    if (this.socket) {
+      // 移除所有监听器，彻底防止卸载后的回调乱跑
+      this.socket.onerror = null;
+      this.socket.onclose = null;
+      this.socket.onmessage = null;
+
+      this.socket.close();
+      this.socket = null;
+    }
   }
 }
